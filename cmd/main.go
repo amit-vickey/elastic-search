@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	elasticsearch "pkg/elasticsearch.go/pkg"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var es elasticsearch.IElasticSearchClient
@@ -138,6 +140,15 @@ func workWithStudentIndex() {
 	isIndexCreationSuccess := createStudentsIndex(index)
 	if isIndexCreationSuccess {
 		fmt.Println("INSERTING DATA IN INDEX...")
+		fmt.Println("Trying with single insert.")
+		isInsertSuccess := insertSingleDataToStudentIndex(index)
+		if isInsertSuccess {
+			fmt.Println("Trying with bulk insert.")
+		} else {
+			fmt.Println("Single insert failed...")
+		}
+	} else {
+		fmt.Println("INDEX CREATION FAILED...")
 	}
 }
 
@@ -172,6 +183,32 @@ func createStudentsIndex(index string) bool {
 		isIndexCreationSuccess = true
 	} else {
 		fmt.Println("Index not created. Try again...")
+		isIndexCreationSuccess = false
 	}
 	return isIndexCreationSuccess
+}
+
+func insertSingleDataToStudentIndex(index string) bool {
+	isInsertSuccess := false;
+	s := elasticsearch.Student{
+		RollNumber: 1,
+		Name:       "Amit",
+		Age:        25,
+		GPA:        7.94,
+		JoinedOn:   time.Now(),
+		IsActive:   true,
+	}
+	byteSlice, marshalErr := json.Marshal(s)
+	if marshalErr != nil {
+		fmt.Println("Error occurred while Marshaling the data ::", marshalErr)
+		return isInsertSuccess
+	}
+	insertResp, insertErr := es.Insert(index, byteSlice)
+	if insertErr != nil {
+		fmt.Println("Error occurred while inserting the data ::", insertErr)
+		return isInsertSuccess
+	}
+	fmt.Println(insertResp)
+	isInsertSuccess = true
+	return isInsertSuccess
 }

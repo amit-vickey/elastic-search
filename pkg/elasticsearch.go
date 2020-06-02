@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"context"
+	"fmt"
 	"github.com/olivere/elastic"
 )
 
@@ -24,6 +25,7 @@ type IElasticSearchClient interface {
 	IndexExists(index string) (bool, error)
 	CreateIndex(index string, mapping string) (*elastic.IndicesCreateResult, error)
 	DeleteIndex(index string) (*elastic.IndicesDeleteResponse, error)
+	Insert(index string, byteSlice []byte) (*elastic.IndexResponse, error)
 }
 
 func (es *Es) GetClient() *elastic.Client {
@@ -44,4 +46,10 @@ func (es *Es) CreateIndex(index string, mapping string) (*elastic.IndicesCreateR
 
 func (es *Es) DeleteIndex(index string) (*elastic.IndicesDeleteResponse, error) {
 	return es.GetClient().DeleteIndex(index).Do(context.Background())
+}
+
+func (es *Es) Insert(index string, byteSlice []byte) (*elastic.IndexResponse, error) {
+	data := string(byteSlice)
+	fmt.Println(data)
+	return es.GetClient().Index().Index(index).Type("entity").Id("1").BodyJson(data).Refresh("true").Do(context.Background())
 }
